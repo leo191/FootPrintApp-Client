@@ -3,15 +3,17 @@
     <string name="hint_email">Email</string>
     <string name="hint_password">Password</string>
     <string name="hint_name">Fullname</string>
-    <string name="hint_child_name">Child Name</string>
     <string name="btn_login">LOGIN</string>
     <string name="btn_register">REGISTER</string>
     <string name="btn_link_to_register">Not a member? Sign up now.</string>
     <string name="btn_link_to_login">Already registred! Login Me.</string>
     <string name="welcome">Welcome</string>
-    <string name="btn_logout">LOGOUT</string>
-    <string name="child_name">Child Name</string>
-    <string name="name">Fullname</string>
-    <string name="google_maps_key">AIzaSyBS8W36UdnUlE7rsIeWkkevY1OgnQrnkBM</string>
+
+    <string name="title_activity_bus_splace">bus_splace</string>
+    <string name="drawer_open">drawer open</string>
+    <string name="drawer_close">drawer close</string>
+
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
 
 </resources>
