@@ -2,6 +2,7 @@ package com.example.leo.footprint;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import android.*;
 import android.Manifest;
@@ -10,6 +11,8 @@ import android.app.Activity;
 import android.app.Application;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
@@ -19,6 +22,7 @@ import android.graphics.Matrix;
 import android.location.Location;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -29,6 +33,7 @@ import android.provider.Settings;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.CollapsingToolbarLayout;
+import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
@@ -39,22 +44,36 @@ import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.ActionBarDrawerToggle;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDialog;
 import android.support.v7.widget.Toolbar;
+import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.view.animation.Interpolator;
 import android.view.animation.LinearInterpolator;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.RelativeLayout;
 import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
+import com.android.volley.toolbox.Volley;
 import com.example.leo.footprint.Services.Load;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -73,6 +92,10 @@ import com.google.maps.android.SphericalUtil;
 import com.myhexaville.smartimagepicker.ImagePicker;
 import com.myhexaville.smartimagepicker.OnImagePickedListener;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import app.AppConfig;
 import helper.LatLngInterpolator;
 import helper.RetriveLocation;
 import helper.SQLiteHandler;
@@ -107,7 +130,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     ImageView mTrack,mstatus;
     Bitmap icon;
     SeekBar mSeekbar;
+    FloatingActionButton mMore,mRad,mDriver;
+    Animation FabOpen,FabClose,FabRotate,FabAntiRotate;
+    private RequestQueue reQ;
+    private Request rqst;
+    TextView fn,ln,cn;
+    private boolean isOpen=false;
     int RAD=100;
+    ProgressDialog pd;
 
     private int REQUEST_CODE_PICKER = 2000;
 
@@ -126,10 +156,23 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mSeekbar.setVisibility(View.INVISIBLE);
         setUpToolBar();
         initMap();
+        mMore = (FloatingActionButton)findViewById(R.id.fab);
+        mRad = (FloatingActionButton)findViewById(R.id.increase_rad);
+        mDriver = (FloatingActionButton)findViewById(R.id.driver_details);
+        FabOpen = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.fab_oepn);
+        FabClose = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.fb_close);
+        FabRotate = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.rotate);
+        FabAntiRotate = AnimationUtils.loadAnimation(getApplicationContext(),R.anim.anti_rotate);
+
+
+
+
+
         txvName = (TextView)header.findViewById(R.id.user_name);
         txvEmail = (TextView)header.findViewById(R.id.user_email);
         profile_image_view = (de.hdodenhof.circleimageview.CircleImageView) header.findViewById(R.id.profile_image);
-
+        reQ = Volley.newRequestQueue(this);
+        pd = new ProgressDialog(MainActivity.this);
 
         // SqLite database handler
         db = new SQLiteHandler(getApplicationContext());
@@ -150,8 +193,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onClick(View v) {
                 startRetrivalLoc();
-                mstatus.setVisibility(View.VISIBLE);
-                mTrack.setVisibility(View.INVISIBLE);
+
+            }
+        });
+
+
+        mstatus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                CameraPosition cameraPosition = new CameraPosition.Builder().target(
+                        startlatLng).zoom(18).build();
+                mGmap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+
             }
         });
 
@@ -177,13 +230,202 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
 
+        mRad.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(userMarker!=null)
+                    mSeekbar.setVisibility(View.VISIBLE);
+                mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+                    @Override
+                    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+                        RAD = progress;
+                        circle.setRadius(RAD);
+                    }
+
+                    @Override
+                    public void onStartTrackingTouch(SeekBar seekBar) {
+
+                    }
+
+                    @Override
+                    public void onStopTrackingTouch(SeekBar seekBar) {
+                        mSeekbar.setVisibility(View.INVISIBLE);
+                    }
+                });
+            }
+        });
+
+
+
+        mMore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(isOpen)
+                {
+                    mMore.startAnimation(FabAntiRotate);
+                    mDriver.startAnimation(FabClose);
+                    mRad.startAnimation(FabClose);
+
+                    mDriver.setClickable(false);
+                    mRad.setClickable(false);
+                    isOpen=false;
+                }
+                else
+                {
+                    mMore.startAnimation(FabRotate);
+                    mDriver.startAnimation(FabOpen);
+                    mRad.startAnimation(FabOpen);
+
+                    mDriver.setClickable(true);
+                    mRad.setClickable(true);
+
+                    isOpen=true;
+                }
+            }
+        });
+
+
+
+        mDriver.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showDialog();
+                FetchJson("");
+
+
+            }
+        });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     }
 
 
 
-    public void start() {
+
+    public void FetchJson(final String bus_no)
+    {
+        pd.setMessage("Fetching Driver Data...");
+        showDialog();
+        //final String bus_no="WB1234";
+        rqst = new StringRequest(Request.Method.POST,
+                AppConfig.URL_GET_DRIVER, new Response.Listener<String>() {
+
+            @Override
+            public void onResponse(String response) {
+                hideDialog();
+                try {
+                    JSONObject jObj = new JSONObject(response);
+                    boolean error = jObj.getBoolean("error");
+
+                    // Check for error node in json
+                    if (!error) {
+
+
+                        LayoutInflater inflater = MainActivity.this.getLayoutInflater();
+                        View content =  inflater.inflate(R.layout.driver_info, null);
+                        fn = (TextView)content.findViewById(R.id.first_name);
+                        ln = (TextView)content.findViewById(R.id.last_name);
+                        cn = (TextView)content.findViewById(R.id.contact_no);
+
+
+
+
+                        JSONObject driver = jObj.getJSONObject("driver");
+                        fn.setText(driver.getString("first_name"));
+                        ln.setText(driver.getString("last_name"));
+                        cn.setText(driver.getString("contact_no"));
+                        AlertDialog.Builder alert = new AlertDialog.Builder(MainActivity.this);
+
+                        alert.setTitle("Driver Details").setCancelable(true).setPositiveButton("Call", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                                Intent intent = new Intent(Intent.ACTION_DIAL, Uri.parse("tel:" + Long.parseLong(cn.getText().toString())));
+                                startActivity(intent);
+
+                            }
+                        }).setNegativeButton("Cancel",null);
+
+                        alert.setView(content);
+                        AlertDialog  dialog = alert.create();
+                        dialog.show();
+
+                        Toast.makeText(MainActivity.this,"Hi",Toast.LENGTH_LONG).show();
+
+
+                    } else {
+                        // Error in login. Get the error message
+                        String errorMsg = jObj.getString("error_msg");
+                        ProgressDialog pd = new ProgressDialog(MainActivity.this);
+                        pd.setMessage("Bus is not Registered");
+                        return;
+                        //                            Toast.makeText(context,
+                        //                                    errorMsg, Toast.LENGTH_LONG).show();
+                    }
+                } catch (JSONException e) {
+                    // JSON error
+                    e.printStackTrace();
+                    Toast.makeText(MainActivity.this, "Json error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+
+            }
+        }, new Response.ErrorListener() {
+
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                hideDialog();
+                //                    Toast.makeText(context,
+                //                            error.getMessage(), Toast.LENGTH_LONG).show();
+
+            }
+        }) {
+
+            @Override
+            protected Map<String, String> getParams() {
+                // Posting parameters to login url
+                Map<String, String> params = new HashMap<String, String>();
+                params.put("bus_no", bus_no);
+
+                return params;
+            }
+
+        };
+
+
+        // Adding request to request queue
+        //AppController.getInstance().addToRequestQueue(strReq);
+        reQ.add(rqst);
+
 
     }
+
+
+    private void showDialog() {
+        if (!pd.isShowing())
+            pd.show();
+    }
+
+    private void hideDialog() {
+        if (pd.isShowing())
+            pd.cancel();
+    }
+
+
+
+
 
 
 
@@ -196,6 +438,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         //Checking for fragment count on backstack
 
 
+        if (this.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            this.drawerLayout.closeDrawer(GravityCompat.START);
+        }
+        else{
 
         if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
             super.onBackPressed();
@@ -214,37 +460,69 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             super.onBackPressed();
             return;
         }
+        }
     }
+    boolean isFirsTime =true;
 
-
-
+    public static int i=1;
     public void startRetrivalLoc() {
 
         retriveLocation = new RetriveLocation(this, bus_no);
-        Thread th = new Thread(retriveLocation);
+        final Thread th = new Thread(retriveLocation);
         th.start();
+
         mhandler = new Handler() {
             @Override
             public void handleMessage(Message msg) {
-                if (mGmap != null && mainMarker !=null) {
-                    mainMarker.setVisible(true);
-                    Bundle bundle = msg.getData();
-                    startlatLng = new LatLng(bundle.getDouble("latitude"), bundle.getDouble("longitude"));
-//                      if(mBusMarker!=null){mBusMarker.remove();}
-//                        mBusMarker = mGmap.addMarker(new MarkerOptions().position(latLng).title("Bus"));
-                   synchronized (this){
-                        if (endlatlng != null && endlatlng != startlatLng) {
-                            float rotation = (float) SphericalUtil.computeHeading(startlatLng, endlatlng);
+                Bundle bundle = msg.getData();
+                startlatLng = new LatLng(bundle.getDouble("latitude"), bundle.getDouble("longitude"));
 
-                            //animateCarMove(mainMarker,endlatlng,startlatLng,1000);
-                            rotateMarker(mainMarker,startlatLng,rotation);
-                        }
+                if (msg.arg1 == 1 || (startlatLng.longitude==0.0 && startlatLng.latitude==0.0) ) {
+                    Toast.makeText(MainActivity.this,"Finding Bus",Toast.LENGTH_LONG).show();
+                    mstatus.setVisibility(View.INVISIBLE);
+                    mTrack.setVisibility(View.VISIBLE);
+
+                    if(i==0)
+                    {
+                        Toast.makeText(MainActivity.this,"Bus is not Available",Toast.LENGTH_LONG).show();
+
+                        th.interrupt();
                     }
 
 
+
                 }
-                endlatlng=startlatLng;
-                checkBusDistance();
+                else {
+                    mstatus.setVisibility(View.VISIBLE);
+
+                    mTrack.setVisibility(View.INVISIBLE);
+                    if (mGmap != null && mainMarker != null) {
+                        mainMarker.setVisible(true);
+
+                        if (isFirsTime && startlatLng.latitude != 0.0 && startlatLng.longitude != 0.0) {
+                            CameraPosition cameraPosition = new CameraPosition.Builder().target(
+                                    startlatLng).zoom(18).build();
+
+                            mGmap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
+                            isFirsTime = false;
+                        }
+
+                        synchronized (this) {
+                            if (endlatlng != null && endlatlng != startlatLng) {
+                                float rotation = (float) SphericalUtil.computeHeading(startlatLng, endlatlng);
+
+                                //animateCarMove(mainMarker,endlatlng,startlatLng,1000);
+                                rotateMarker(mainMarker, startlatLng, rotation);
+                            }
+                        }
+
+
+                    }
+                    endlatlng = startlatLng;
+                    checkBusDistance();
+                }
+
+                mhandler.removeCallbacksAndMessages(th);
             }
         };
 
@@ -296,16 +574,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         this,
                         0,
                         new Intent(getApplicationContext(),MainActivity.class),
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        PendingIntent.FLAG_ONE_SHOT
                 );
         NotificationCompat.Builder mBuilder =
                 new NotificationCompat.Builder(MainActivity.this)
                         .setSmallIcon(R.mipmap.ic_launcher).setSound(uri)
                         .setContentTitle("Your child is Arriving")
                         .setContentText("Bus is just few minutes away from you.. :)")
-                        .setContentIntent(resultPendingIntent);
+                        .setContentIntent(resultPendingIntent)
+                        .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.bus_sound));
         NotificationManager notificationManager = (NotificationManager)getSystemService(NOTIFICATION_SERVICE);
-
         notificationManager.notify(001,mBuilder.build());
 
 
@@ -381,6 +659,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     //////////////
 
+
+
+float prevrot=0;
+    ////
     private  void  rotateMarker(final Marker marker, final LatLng destination, final float rotation) {
 
         if (marker != null) {
@@ -399,10 +681,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     try {
                         float v = animation.getAnimatedFraction();
                         LatLng newPosition = latLngInterpolator.interpolate(v, startPosition, destination);
-                        float bearing = computeRotation(v, startRotation, rotation);
+                        //float bearing = computeRotation(v, startRotation, rotation);
+                        if(rotation!=0.0)
+                            marker.setRotation(rotation);
 
-                        marker.setRotation(bearing);
                         marker.setPosition(newPosition);
+                        prevrot = rotation;
 
                     }
                     catch (Exception e){
@@ -413,21 +697,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             valueAnimator.start();
         }
     }
-    private static float computeRotation(float fraction, float start, float end) {
-        float normalizeEnd = end - start; // rotate start to 0
-        float normalizedEndAbs = (normalizeEnd + 360) % 360;
-
-        float direction = (normalizedEndAbs > 180) ? -1 : 1; // -1 = anticlockwise, 1 = clockwise
-        float rotation;
-        if (direction > 0) {
-            rotation = normalizedEndAbs;
-        } else {
-            rotation = normalizedEndAbs - 360;
-        }
-
-        float result = fraction * rotation + start;
-        return (result + 360) % 360;
-    }
+//    private static float computeRotation(float fraction, float start, float end) {
+//        float normalizeEnd = end - start; // rotate start to 0
+//        float normalizedEndAbs = (normalizeEnd + 360) % 360;
+//
+//        float direction = (normalizedEndAbs > 180) ? -1 : 1; // -1 = anticlockwise, 1 = clockwise
+//        float rotation;
+//        if (direction > 0) {
+//            rotation = normalizedEndAbs;
+//        } else {
+//            rotation = normalizedEndAbs - 360;
+//        }
+//
+//        float result = fraction * rotation + start;
+//        return (result + 360) % 360;
+//    }
 
 
 
@@ -441,42 +725,44 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         inflater.inflate(R.menu.option, menu);
         return true;
     }
-
+    CameraPosition cameraPosition;
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
+
+//        if(mainMarker!=null && startlatLng){
+//         cameraPosition=new CameraPosition.Builder().target(
+//                startlatLng).zoom(12).build();}
+
         switch (item.getItemId()) {
             case R.id.logout:
                 logoutUser();
                 return true;
             case R.id.normalV:
-                CameraPosition cameraPosition = new CameraPosition.Builder().target(
-                        startlatLng).zoom(8).build();
+                //if(mainMarker!=null){mGmap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));}
 
-                mGmap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));
-                mGmap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+                mGmap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
 
                 return true;
+
+            case R.id.tarrainV:
+                //if(mainMarker!=null){mGmap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));}
+
+                mGmap.setMapType(GoogleMap.MAP_TYPE_TERRAIN);
+
+                return true;
+
+            case R.id.hybridV:
+               // if(mainMarker!=null){mGmap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));}
+
+                mGmap.setMapType(GoogleMap.MAP_TYPE_HYBRID);
+
+                return true;
+
             case R.id.satelliteV:
-                if(userMarker!=null)
-                    mSeekbar.setVisibility(View.VISIBLE);
-                    mSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                        @Override
-                        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                            RAD = progress;
-                            circle.setRadius(RAD);
-                        }
+               // if(mainMarker!=null){mGmap.animateCamera(CameraUpdateFactory.newCameraPosition(cameraPosition));}
 
-                        @Override
-                        public void onStartTrackingTouch(SeekBar seekBar) {
-
-                        }
-
-                        @Override
-                        public void onStopTrackingTouch(SeekBar seekBar) {
-                                mSeekbar.setVisibility(View.INVISIBLE);
-                        }
-                    });
+                mGmap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
                 //mGmap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
                 return true;
             default:
@@ -499,7 +785,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
        mapFragment  = (MapFragment) getFragmentManager().findFragmentById(R.id.map_of_bus);
         mapFragment.getMapAsync(this);
         icon = BitmapFactory.decodeResource(getResources(),R.drawable.bus);
-        icon = Bitmap.createScaledBitmap(icon,40,75,true);
+        icon = Bitmap.createScaledBitmap(icon,60,100,true);
     }
 
 
@@ -507,6 +793,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
         navigationView = (NavigationView)findViewById(R.id.nav_view);
         drawerLayout = (DrawerLayout)findViewById(R.id.drawerlayout);
         header = navigationView.getHeaderView(0);
@@ -539,11 +826,18 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 FragmentTransaction fragmentTransaction;
 
                 if (id == R.id.user_detalis_edit) {
-                    Fragment fragment = EditUserDetails.newInEditUserDetails();
-                    fragmentTransaction = getSupportFragmentManager().beginTransaction();
-                    getSupportFragmentManager().popBackStack();
-                    fragmentTransaction.add(R.id.content_frame,new EditUserDetails()).addToBackStack("fragBack").commit();
-                    getSupportActionBar().setTitle(item.getTitle());
+
+                    AlertDialog.Builder Edit = new AlertDialog.Builder(MainActivity.this);
+                    Edit.setView(R.layout.fragment_edit_user_details);
+                    AlertDialog al = Edit.create();
+                    al.show();
+
+
+//                    Fragment fragment = EditUserDetails.newInEditUserDetails();
+//                    fragmentTransaction = getSupportFragmentManager().beginTransaction();
+//                    getSupportFragmentManager().popBackStack();
+//                    fragmentTransaction.add(R.id.content_frame,new EditUserDetails()).addToBackStack("fragBack").commit();
+//                    getSupportActionBar().setTitle(item.getTitle());
 
                     // Handle the camera action
                 } else if (id == R.id.settings) {
@@ -578,8 +872,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(GoogleMap googleMap) {
         mGmap = googleMap;
         if (mGmap != null) {
-          mainMarker = mGmap.addMarker(new MarkerOptions().position(new LatLng(0,0))
-                    .title("Hamburg").icon(BitmapDescriptorFactory.fromBitmap(icon)).flat(true));
+          mainMarker = mGmap.addMarker(new MarkerOptions().position(new LatLng(20.5937,78.9629))
+                    .title("Bus").icon(BitmapDescriptorFactory.fromBitmap(icon)).flat(true));
             CameraPosition cameraPosition = new CameraPosition.Builder().target(
                     new LatLng(20.5937,78.9629)).zoom(8).build();
 
@@ -588,8 +882,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             View locationButton = ((View) mapFragment.getView().findViewById(Integer.parseInt("1")).getParent()).findViewById(Integer.parseInt("2"));            RelativeLayout.LayoutParams rlp = (RelativeLayout.LayoutParams) locationButton.getLayoutParams();
             rlp.addRule(RelativeLayout.ALIGN_PARENT_TOP, 0);
             rlp.addRule(RelativeLayout.ALIGN_PARENT_TOP, RelativeLayout.TRUE);
-            rlp.setMargins(0,50, 0, 0);
-
+            rlp.setMargins(0,0,10, 0);
 
 
 
@@ -608,7 +901,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     circle = mGmap.addCircle(new CircleOptions()
                             .center(latLng)
                             .radius(RAD)
-                            .strokeColor(Color.BLUE).strokeWidth(1).fillColor(Color.GREEN)
+                            .strokeColor(Color.BLUE).strokeWidth(1).fillColor(Color.parseColor("#80000000"))
                     );
                 }
             });

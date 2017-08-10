@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="10dp">
+
+    <RelativeLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+        <TextView
+            android:textSize="16dp"
+            android:id="@+id/first_name"
+    android:text="First Name"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />
+
+    <TextView
+        android:textSize="16dp"
+        android:id="@+id/last_name"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@+id/first_name"
+        android:text="Last Name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+    </RelativeLayout>
+    <TextView
+        android:id="@+id/contact_no"
+        android:textSize="16dp"
+
+        android:drawableLeft="@drawable/ic_action_call"
+        android:layout_marginTop="10dp"
+        android:text="Contact No"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+</LinearLayout>

@@ -6,7 +6,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
 
     tools:context="com.example.leo.footprint.EditUserDetails">
-
+<!--<include-->
+    <!--android:id="@+id/toolbar_edit_details"-->
+    <!--layout="@layout/toolbar"/>-->
 
 
 
@@ -15,23 +17,22 @@
 
     <!-- TODO: Update blank fragment layout -->
     <RelativeLayout
-        android:background="@android:color/white"
-        android:gravity="center"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:background="@color/fab_rad"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
         <de.hdodenhof.circleimageview.CircleImageView
 
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="100dp"
             android:id="@+id/prof_edit"
             android:src="@drawable/user"
             app:civ_border_width="2dp"
             app:civ_border_color="@android:color/holo_blue_dark"
             android:layout_width="100dp"
-            android:layout_height="100dp" />
+            android:layout_height="100dp"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true" />
 
         <LinearLayout
-            android:paddingTop="30dp"
             android:orientation="vertical"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -122,7 +123,14 @@
                    android:hint="Password"
                    />
                </android.support.design.widget.TextInputLayout>
-               <EditText
+               <android.support.design.widget.TextInputLayout
+                   android:id="@+id/conf_pass_text"
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   app:passwordToggleEnabled="true"
+                   >
+
+               <android.support.v7.widget.AppCompatEditText
                    android:layout_margin="5dp"
 
                    android:id="@+id/conform_pass_edit"
@@ -139,6 +147,16 @@
                    android:paddingBottom="12dp"
                    android:hint="Conform Password"
                    />
+               </android.support.design.widget.TextInputLayout>
+               <Button
+                   android:id="@+id/Update"
+                   android:layout_width="match_parent"
+                   android:layout_height="wrap_content"
+                   android:layout_weight="1"
+                   android:textColor="@color/white"
+                   android:textStyle="bold"
+                   android:background="@drawable/round_edged_button"
+                   android:text="Upadte" />
 
 
            </LinearLayout>

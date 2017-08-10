@@ -42,6 +42,7 @@ public class RetriveLocation implements Runnable{
     private double latitude,longitude;
     private String bus_no;
     Bundle bundle;
+    Message message;
     public RetriveLocation(Context context,String bus_no)
     {
         reQ=Volley.newRequestQueue(context);
@@ -64,94 +65,118 @@ public class RetriveLocation implements Runnable{
     public void setLongitude(double longitude) {
         this.longitude = longitude;
     }
-
+    volatile boolean shutdown = false;
     @Override
     public void run() {
-        while(true) {
-            Message message = Message.obtain();
-            rqst = new StringRequest(Method.POST,
-                    AppConfig.URL_RETRIVE_LOC, new Response.Listener<String>() {
-
-                @Override
-                public void onResponse(String response) {
-
-                    try {
-                        JSONObject jObj = new JSONObject(response);
-                        boolean error = jObj.getBoolean("error");
-
-                        // Check for error node in json
-                        if (!error) {
 
 
 
+            while (!Thread.currentThread().isInterrupted()) {
+                message = Message.obtain();
+                rqst = new StringRequest(Method.POST,
+                        AppConfig.URL_RETRIVE_LOC, new Response.Listener<String>() {
 
-                            JSONObject bus_location = jObj.getJSONObject("bus_location");
+                    @Override
+                    public void onResponse(String response) {
+
+                        try {
+                            JSONObject jObj = new JSONObject(response);
+                            boolean error = jObj.getBoolean("error");
+
+                            // Check for error node in json
+                            if (!error) {
+
+
+                                JSONObject bus_location = jObj.getJSONObject("bus_location");
 
 //                            latitude = Double.parseDouble(bus_location.getString("latitude"));
 //                            longitude = Double.parseDouble(bus_location.getString("longitude"));
-                            setLatitude(Double.parseDouble(bus_location.getString("latitude")));
-                            setLongitude(Double.parseDouble(bus_location.getString("longitude")));
+                                setLatitude(Double.parseDouble(bus_location.getString("latitude")));
+                                setLongitude(Double.parseDouble(bus_location.getString("longitude")));
 
 
-                        } else {
-                            // Error in login. Get the error message
-                            String errorMsg = jObj.getString("error_msg");
-//                            Toast.makeText(context,
-//                                    errorMsg, Toast.LENGTH_LONG).show();
+                            } else {
+                                // Error in login. Get the error message
+                                String errorMsg = jObj.getString("error_msg");
+
+//
+                                message.arg1 = 1;
+                                MainActivity.i = 0;
+
+
+                            }
+                        } catch (JSONException e) {
+                            // JSON error
+                            e.printStackTrace();
+                            //Toast.makeText(context, "Json error: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            message.arg1 = 1;
+
+
                         }
-                    } catch (JSONException e) {
-                        // JSON error
+
+                    }
+                }, new Response.ErrorListener() {
+
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+//                    Toast.makeText(context,
+//                            error.getMessage(), Toast.LENGTH_LONG).show();
+                        message.arg1 = 1;
+
+                    }
+                }) {
+
+                    @Override
+                    protected Map<String, String> getParams() {
+                        // Posting parameters to login url
+                        Map<String, String> params = new HashMap<String, String>();
+                        params.put("bus_no", bus_no);
+
+                        return params;
+                    }
+
+                };
+
+
+                // Adding request to request queue
+                //AppController.getInstance().addToRequestQueue(strReq);
+                reQ.add(rqst);
+
+                if (message.arg1 == 1) {
+                    MainActivity.mhandler.sendMessage(message);
+
+                    Thread.currentThread().interrupt();
+                    break;
+                } else {
+
+
+                    bundle.putDouble("latitude", latitude);
+                    bundle.putDouble("longitude", longitude);
+
+
+                    message.setData(bundle);
+
+                    MainActivity.mhandler.sendMessage(message);
+
+
+                    try {
+                        Thread.sleep(1000);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
                         e.printStackTrace();
-                        Toast.makeText(context, "Json error: " + e.getMessage(), Toast.LENGTH_LONG).show();
                     }
 
                 }
-            }, new Response.ErrorListener() {
 
-                @Override
-                public void onErrorResponse(VolleyError error) {
-//                    Toast.makeText(context,
-//                            error.getMessage(), Toast.LENGTH_LONG).show();
-
-                }
-            }) {
-
-                @Override
-                protected Map<String, String> getParams() {
-                    // Posting parameters to login url
-                    Map<String, String> params = new HashMap<String, String>();
-                    params.put("bus_no", bus_no);
-
-                    return params;
-                }
-
-            };
-
-
-            // Adding request to request queue
-            //AppController.getInstance().addToRequestQueue(strReq);
-            reQ.add(rqst);
-
-            bundle.putDouble("latitude",latitude);
-            bundle.putDouble("longitude",longitude);
-
-
-            message.setData(bundle);
-
-            MainActivity.mhandler.sendMessage(message);
-
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
-
-
         }
 
 
 
 
-    };
 
-}
+
+
+    }
+
+

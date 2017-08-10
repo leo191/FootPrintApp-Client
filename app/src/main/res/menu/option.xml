@@ -6,6 +6,10 @@
         android:title="Noraml View" />
     <item android:id="@+id/satelliteV"
         android:title="Satellite View" />
+    <item android:id="@+id/tarrainV"
+        android:title="Tarrains View" />
+    <item android:id="@+id/hybridV"
+        android:title="Hybrid View" />
     <item android:id="@+id/logout"
         android:title="LogOut" />
 

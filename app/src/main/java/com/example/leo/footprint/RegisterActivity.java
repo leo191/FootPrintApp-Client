@@ -1,12 +1,11 @@
 package com.example.leo.footprint;
 
-import android.app.Activity;
 import android.app.ProgressDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.support.annotation.IntegerRes;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.util.Patterns;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -19,6 +18,7 @@ import com.android.volley.Response;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.basgeekball.awesomevalidation.AwesomeValidation;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import app.AppConfig;
-import app.AppController;
 import helper.SQLiteHandler;
 import helper.SessionManager;
 
@@ -45,6 +44,7 @@ public class RegisterActivity extends AppCompatActivity {
     private SQLiteHandler db;
     private RequestQueue requestQ;
     private Request rqst ;
+    private AwesomeValidation awesomeValidation;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -53,8 +53,8 @@ public class RegisterActivity extends AppCompatActivity {
 
         inputFullName = (EditText) findViewById(R.id.name);
         inputBusNo  = (EditText) findViewById(R.id.bus_no);
-        inputEmail = (EditText) findViewById(R.id.email);
-        inputPassword = (EditText) findViewById(R.id.password);
+        inputEmail = (EditText) findViewById(R.id.email_regis);
+        inputPassword = (EditText) findViewById(R.id.password_regis);
         btnRegister = (Button) findViewById(R.id.btnRegister);
         btnLinkToLogin = (Button) findViewById(R.id.btnLinkToLoginScreen);
         requestQ = Volley.newRequestQueue(this);
@@ -76,6 +76,17 @@ public class RegisterActivity extends AppCompatActivity {
             startActivity(intent);
             finish();
         }
+
+
+
+//
+//        awesomeValidation.addValidation(this, R.id.name, "^[A-Za-z\\s]{1,}[\\.]{0,1}[A-Za-z\\s]{0,}$", R.string.nameerror);
+//        awesomeValidation.addValidation(this, R.id.email_regis, Patterns.EMAIL_ADDRESS, R.string.nameerror);
+       // awesomeValidation.addValidation(this, R.id.editTextMobile, "^[2-9]{2}[0-9]{8}$", R.string.nameerror);
+        //awesomeValidation.addValidation(this, R.id.editTextDob, "^(?:(?:31(\\/|-|\\.)(?:0?[13578]|1[02]))\\1|(?:(?:29|30)(\\/|-|\\.)(?:0?[1,3-9]|1[0-2])\\2))(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$|^(?:29(\\/|-|\\.)0?2\\3(?:(?:(?:1[6-9]|[2-9]\\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\\d|2[0-8])(\\/|-|\\.)(?:(?:0?[1-9])|(?:1[0-2]))\\4(?:(?:1[6-9]|[2-9]\\d)?\\d{2})$", R.string.nameerror);
+        //awesomeValidation.addValidation(this, R.id.editTextAge, Range.closed(13, 60), R.string.ageerror);
+
+
 
         // Register Button Click event
         btnRegister.setOnClickListener(new View.OnClickListener() {
@@ -102,9 +113,24 @@ public class RegisterActivity extends AppCompatActivity {
                 Intent i = new Intent(getApplicationContext(),
                         LoginActivity.class);
                 startActivity(i);
+                overridePendingTransition(R.anim.slide_right_in,R.anim.slide_out_right);
+
                 finish();
             }
         });
+
+
+
+    }
+
+
+    @Override
+    public void onBackPressed() {
+        Intent i = new Intent(getApplicationContext(),
+                LoginActivity.class);
+        startActivity(i);
+        finish();
+        overridePendingTransition(R.anim.slide_right_in,R.anim.slide_out_right);
 
     }
 

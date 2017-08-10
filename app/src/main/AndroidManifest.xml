@@ -30,9 +30,10 @@
         android:theme="@style/AppTheme">
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyBS8W36UdnUlE7rsIeWkkevY1OgnQrnkBM" />
+            android:value="AIzaSyBUucAkuk4qknwF7rQHMSBQ8VKl3OoOvIA" />
 
         <activity
+
             android:name=".LoginActivity"
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustPan">
@@ -43,6 +44,7 @@
             android:label="@string/app_name"
             android:windowSoftInputMode="adjustPan" />
         <activity
+            android:launchMode="singleTop"
             android:name=".MainActivity"
             android:label="@string/app_name"
              />

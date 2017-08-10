@@ -1,14 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
-<FrameLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:id="@+id/content_frame"
+    android:layout_marginTop="?attr/actionBarSize"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
-    tools:showIn="@layout/app_bar_main"
     tools:context=".MainActivity">
 
 
-</FrameLayout>
+
+    <!--<ProgressBar-->
+        <!--android:id="@+id/json_progress"-->
+        <!--android:style="?android:attr/progressBarStyleLarge"-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:layout_centerHorizontal="true"-->
+        <!--android:layout_centerVertical="true"-->
+        <!--android:visibility="gone"-->
+         <!--/>-->
+
+
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/driver_details"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/increase_rad"
+        app:pressedTranslationZ="12dp"
+        app:backgroundTint="@color/fab_driver"
+        android:visibility="invisible"
+        android:elevation="6dp"
+        android:layout_margin="@dimen/fab_margin"
+        android:src="@drawable/ic_driver" />
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/increase_rad"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_above="@+id/fab"
+        app:pressedTranslationZ="12dp"
+        app:backgroundTint="@color/fab_rad"
+        android:elevation="6dp"
+        android:visibility="invisible"
+        android:layout_margin="@dimen/fab_margin"
+        android:src="@drawable/ic_rad" />
+
+
+
+    <android.support.design.widget.FloatingActionButton
+    android:id="@+id/fab"
+        android:layout_alignParentBottom="true"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    app:pressedTranslationZ="12dp"
+        app:backgroundTint="@color/button_orange"
+    android:elevation="6dp"
+    android:layout_margin="@dimen/fab_margin"
+    android:src="@drawable/ic_more" />
+
+</RelativeLayout>
+
